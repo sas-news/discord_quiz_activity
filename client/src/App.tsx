@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DiscordSDK } from "@discord/embedded-app-sdk";
+import ReconnectingWebSocket from "reconnecting-websocket";
 
 type Auth = {
   access_token: number | string;
@@ -76,17 +77,35 @@ const App = () => {
     console.log("Authenticated with access token:", auth.access_token);
   };
 
+  const [voiceChannelName, setVoiceChannelName] = useState("");
+  const [playerList, setPlayerList] = useState<Player[]>([]);
+
+  const socketRef = useRef<ReconnectingWebSocket>();
+
   useEffect(() => {
     setupDiscordSdk().then(() => {
       console.log("Discord SDK is authenticated");
       appendVoiceChannelName();
       appendPlayer();
     });
-  }, []);
 
+    const socket = new ReconnectingWebSocket("/.proxy");
+
+    const handleButtonClick = () => {
+      // サーバーにメッセージを送信
+      socketRef.current?.send("送信メッセージ");
+      setCount((prev) => prev + 1); 
+    };
+    socket.addEventListener("message", (event) => {
+      console.log("Received message:", event.data);
+    });
+
+    return () => {
+      socket.close();
+      socket.removeEventListener("message", handleButtonClick);
+    };
+  }, []);
   const [count, setCount] = useState(0);
-  const [voiceChannelName, setVoiceChannelName] = useState("");
-  const [playerList, setPlayerList] = useState<Player[]>([]);
 
   const appendVoiceChannelName = async () => {
     let activityChannelName = "Unknown";
@@ -116,7 +135,11 @@ const App = () => {
     <>
       <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
+        <button
+          onClick={() => {
+            socketRef.current?.send("送信メッセージ");
+          }}
+        >
           count is {count}
         </button>
         <p>
@@ -126,7 +149,7 @@ const App = () => {
       <p className="read-the-docs">{voiceChannelName}</p>
       <ul>
         {playerList.map((player) => (
-          <li>{player.username}</li>
+          <li key={player.id}>{player.username}</li>
         ))}
       </ul>
     </>
