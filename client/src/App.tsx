@@ -1,43 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { DiscordSDK } from "@discord/embedded-app-sdk";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { DiscordSDK, Types } from "@discord/embedded-app-sdk";
 import ReconnectingWebSocket from "reconnecting-websocket";
 
-type Auth = {
-  access_token: number | string;
-  user: {
-    username: string;
-    discriminator: string;
-    id: string;
-    public_flags: number;
-    avatar?: string | null;
-    global_name?: string | null;
-  };
-  scopes: (string | number)[];
-  expires: string;
-  application: { id: string; name: string };
-};
-
-type Player = {
-  username: string;
-  discriminator: string;
-  id: string;
-  bot: boolean;
-  flags: number;
-  avatar?: string | null | undefined;
-  global_name?: string | null | undefined;
-  avatar_decoration_data?:
-    | {
-        asset: string;
-        skuId?: string | undefined;
-      }
-    | null
-    | undefined;
-  premium_type?: number | null | undefined;
-  nickname?: string | undefined;
-};
-
 const App = () => {
-  let auth: Auth | null;
+  let auth;
 
   const discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID);
 
@@ -78,9 +44,23 @@ const App = () => {
   };
 
   const [voiceChannelName, setVoiceChannelName] = useState("");
-  const [playerList, setPlayerList] = useState<Player[]>([]);
+  const [playerList, setPlayerList] = useState<
+    Types.GetActivityInstanceConnectedParticipantsResponse["participants"]
+  >([]);
+  const [message, setMessage] = useState("");
+  const webSocketRef = useRef<ReconnectingWebSocket>();
 
-  const socketRef = useRef<ReconnectingWebSocket>();
+  useEffect(() => {
+    const socket = new ReconnectingWebSocket(`wss://localhost:3690`);
+    webSocketRef.current = socket;
+    console.log("そけおおおおんんん");
+
+    socket.addEventListener("message", (event) => {
+      setMessage(event.data);
+    });
+
+    return () => socket.close();
+  }, []);
 
   useEffect(() => {
     setupDiscordSdk().then(() => {
@@ -88,24 +68,16 @@ const App = () => {
       appendVoiceChannelName();
       appendPlayer();
     });
-
-    const socket = new ReconnectingWebSocket("/.proxy");
-
-    const handleButtonClick = () => {
-      // サーバーにメッセージを送信
-      socketRef.current?.send("送信メッセージ");
-      setCount((prev) => prev + 1); 
-    };
-    socket.addEventListener("message", (event) => {
-      console.log("Received message:", event.data);
-    });
-
-    return () => {
-      socket.close();
-      socket.removeEventListener("message", handleButtonClick);
-    };
   }, []);
-  const [count, setCount] = useState(0);
+
+  const [inputText, setInputText] = useState("");
+  const submit: React.FormEventHandler = useCallback(
+    (event: React.FormEvent) => {
+      event.preventDefault();
+      webSocketRef.current?.send(inputText);
+    },
+    [inputText]
+  );
 
   const appendVoiceChannelName = async () => {
     let activityChannelName = "Unknown";
@@ -135,13 +107,14 @@ const App = () => {
     <>
       <h1>Vite + React</h1>
       <div className="card">
-        <button
-          onClick={() => {
-            socketRef.current?.send("送信メッセージ");
-          }}
-        >
-          count is {count}
-        </button>
+        <h1>{JSON.stringify(message)}</h1>
+        <form onSubmit={submit}>
+          <input
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+          />
+          <button>送信</button>
+        </form>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>

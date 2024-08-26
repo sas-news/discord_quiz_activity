@@ -3,12 +3,27 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 import http from "http";
 import { WebSocketServer } from "ws";
+import helmet from "helmet";
+import { Types } from "@discord/embedded-app-sdk";
+
 dotenv.config({ path: "../.env" });
 
 const app: Express = express();
-const port = 3001;
+const port = 3690;
 
-// Allow express to parse JSON bodies
+app.use(helmet()); // 追加
+
+const url = `wss://${process.env.VITE_DISCORD_CLIENT_ID}.discordsays.com/.proxy/`;
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: ["'self'", url],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+    },
+  })
+);
+
 app.use(express.json());
 
 app.post("/api/token", async (req, res) => {
@@ -25,13 +40,12 @@ app.post("/api/token", async (req, res) => {
     }),
   });
 
-  const responseData: { access_token: string } = await response.json();
-
   if (!response.ok) {
     return res.status(response.status).send({ error: "Failed to fetch token" });
   }
 
-  const access_token = responseData.access_token;
+  const data = (await response.json()) as { access_token: string };
+  const access_token = data.access_token;
 
   res.send({ access_token });
 });
@@ -40,22 +54,24 @@ const server = http.createServer(app);
 
 const wss = new WebSocketServer({ server });
 
-let count = 0;
+wss.on("connection", (ws: WebSocket) => {
+  console.log("connected!");
 
-wss.on("connection", (ws) => {
-  console.log("クライアントが接続されました");
+  const wsClient = ws as WebSocket & {
+    on: (event: string, callback: (data: any) => void) => void;
+  };
 
-  ws.on("message", (message) => {
-    console.log("受信メッセージ:", message);
-    count++;
-    ws.send(`カウントは ${count} です`);
+  wsClient.on("message", (data: string, isBinary?: boolean) => {
+    for (const client of wss.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data, { binary: isBinary });
+      }
+    }
   });
 
-  ws.on("close", () => {
-    console.log("クライアントが切断されました");
-  });
+  wsClient.on("close", () => console.log("closed!"));
 });
 
 server.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+  console.log(`Server listening at http://114.148.254.131:${port}`);
 });
