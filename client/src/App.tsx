@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { DiscordSDK, Types } from "@discord/embedded-app-sdk";
-import ReconnectingWebSocket from "reconnecting-websocket";
 
 const App = () => {
   let auth;
@@ -47,20 +46,6 @@ const App = () => {
   const [playerList, setPlayerList] = useState<
     Types.GetActivityInstanceConnectedParticipantsResponse["participants"]
   >([]);
-  const [message, setMessage] = useState("");
-  const webSocketRef = useRef<ReconnectingWebSocket>();
-
-  useEffect(() => {
-    const socket = new ReconnectingWebSocket(`wss://localhost:3690`);
-    webSocketRef.current = socket;
-    console.log("そけおおおおんんん");
-
-    socket.addEventListener("message", (event) => {
-      setMessage(event.data);
-    });
-
-    return () => socket.close();
-  }, []);
 
   useEffect(() => {
     setupDiscordSdk().then(() => {
@@ -69,15 +54,6 @@ const App = () => {
       appendPlayer();
     });
   }, []);
-
-  const [inputText, setInputText] = useState("");
-  const submit: React.FormEventHandler = useCallback(
-    (event: React.FormEvent) => {
-      event.preventDefault();
-      webSocketRef.current?.send(inputText);
-    },
-    [inputText]
-  );
 
   const appendVoiceChannelName = async () => {
     let activityChannelName = "Unknown";
@@ -107,14 +83,6 @@ const App = () => {
     <>
       <h1>Vite + React</h1>
       <div className="card">
-        <h1>{JSON.stringify(message)}</h1>
-        <form onSubmit={submit}>
-          <input
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-          />
-          <button>送信</button>
-        </form>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
