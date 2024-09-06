@@ -1,4 +1,4 @@
-import { DiscordSDK, patchUrlMappings } from "@discord/embedded-app-sdk";
+import { DiscordSDK } from "@discord/embedded-app-sdk";
 
 const discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID);
 
@@ -34,10 +34,6 @@ const setupDiscordSdk = async () => {
   }
 
   console.log("Discord SDK is authenticated");
-
-  patchUrlMappings([
-    { prefix: "/api/firestore", target: "https://firestore.googleapis.com" },
-  ]);
 
   return auth;
 };

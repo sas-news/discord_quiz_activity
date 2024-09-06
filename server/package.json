@@ -5,8 +5,7 @@
   "main": "server.ts",
   "type": "module",
   "scripts": {
-    "dev": "ts-node server.ts",
-    "json": "json-server --watch db.json --port 3692"
+    "dev": "ts-node server.ts"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +21,7 @@
     "@types/node": "^22.5.4",
     "@types/node-fetch": "^2.6.11",
     "config": "^3.3.12",
+    "cors": "^2.8.5",
     "express": "^4.19.2",
     "socket.io": "^4.7.5",
     "ts-node": "^10.9.2",

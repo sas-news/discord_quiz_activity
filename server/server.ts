@@ -2,11 +2,25 @@ import express, { Express } from "express";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 import http from "http";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import socket from "./socket";
+import cors from "cors";
+import { env } from "process";
 
 dotenv.config({ path: "../.env" });
 
 const app: Express = express();
 const port = 3690;
+const host = "127.0.0.1";
+const corsOrigin = `https://${env.VITE_DISCORD_CLIENT_ID}.discordsays.com`;
+
+app.use(
+  cors({
+    origin: corsOrigin,
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
@@ -34,8 +48,19 @@ app.post("/api/token", async (req, res) => {
   res.send({ access_token });
 });
 
-const server = http.createServer(app);
+const httpServer = createServer(app);
 
-server.listen(port, () => {
-  console.log(`Server listening at http://114.148.254.131:${port}`);
+const io = new Server(httpServer, {
+  cors: {
+    origin: corsOrigin,
+    credentials: true,
+  },
+});
+
+app.get("/api/socket", (_, res) => res.send(`Server is up`));
+
+httpServer.listen(port, host, () => {
+  console.log(`http://114.148.254.131:${port}`);
+
+  socket({ io });
 });
