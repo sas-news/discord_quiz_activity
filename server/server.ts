@@ -2,9 +2,7 @@ import express, { Express } from "express";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 import http from "http";
-import { createServer } from "http";
-import { Server } from "socket.io";
-import socket from "./socket";
+import { WebSocketServer } from "ws";
 import cors from "cors";
 import { env } from "process";
 
@@ -48,19 +46,23 @@ app.post("/api/token", async (req, res) => {
   res.send({ access_token });
 });
 
-const httpServer = createServer(app);
+const server = http.createServer(app);
 
-const io = new Server(httpServer, {
-  cors: {
-    origin: corsOrigin,
-    credentials: true,
-  },
+const wss = new WebSocketServer({ server, path: "/api/ws" });
+
+wss.on("connection", (ws) => {
+  console.log("connected!");
+
+  ws.on("message", (data, isBinary) => {
+    for (const client of wss.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data, { binary: isBinary });
+      }
+    }
+  });
+
+  ws.on("close", () => console.log("closed!"));
 });
-
-app.get("/api/socket", (_, res) => res.send(`Server is up`));
-
-httpServer.listen(port, host, () => {
+server.listen(port, host, () => {
   console.log(`http://114.148.254.131:${port}`);
-
-  socket({ io });
 });

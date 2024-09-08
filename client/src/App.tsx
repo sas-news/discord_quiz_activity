@@ -1,42 +1,47 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Types } from "@discord/embedded-app-sdk";
 import discordSdk, { setupDiscordSdk } from "./Discord";
-import { useSockets } from "./context/socket.context";
+import ReconnectingWebSocket from "reconnecting-websocket";
 
 const App = () => {
   const [voiceChannelName, setVoiceChannelName] = useState("");
   const [playerList, setPlayerList] = useState<
     Types.GetActivityInstanceConnectedParticipantsResponse["participants"]
   >([]);
-  const { socket, messages, setMessages } = useSockets();
-  const messageRef = useRef<HTMLInputElement>(null);
-  console.log(messages);
 
-  const handleClick = () => {
-    if (messageRef.current) {
-      const message = messageRef.current.value;
-      if (!String(message).trim()) return;
-
-      if (message.trim() === "") {
-        console.error("Message is empty");
-        return;
-      }
-      console.log(message);
-      socket.emit("sendMessage", message);
-
-      messageRef.current.value = "";
-    }
-  };
-
-  socket.on("responseMessage", (message) => {
-    console.log(message);
-    setMessages([...messages, message]);
-    console.log(messages);
-  });
+  const [message, setMessage] = useState("");
+  const webSocketRef = useRef<ReconnectingWebSocket>();
 
   useEffect(() => {
+    const socket = new ReconnectingWebSocket(
+      `wss://${
+        import.meta.env.VITE_DISCORD_CLIENT_ID
+      }.discordsays.com/.proxy/api/ws`
+    );
+    webSocketRef.current = socket;
+    console.log("そけおおおおんんん");
+
+    socket.addEventListener("message", (event) => {
+      console.log("こう、、、しん？？");
+      event.data.text().then((text: string) => {
+        setMessage(text);
+      });
+    });
+
+    return () => socket.close();
+  }, []);
+
+  const [inputText, setInputText] = useState("");
+  const submit: React.FormEventHandler = useCallback(
+    (event: React.FormEvent) => {
+      event.preventDefault();
+      webSocketRef.current?.send(inputText);
+    },
+    [inputText]
+  );
+  useEffect(() => {
     setupDiscordSdk().then((auth) => {
-      console.log("Discord SDK is authenticated");
+      console.log("Discord SDK is authenticated", auth);
       appendVoiceChannelName();
       appendPlayer();
     });
@@ -78,25 +83,15 @@ const App = () => {
         ))}
       </ul>
       <div>
-        <input type="text" ref={messageRef} placeholder="write message" />
-        <button onClick={handleClick}>Send</button>
-        <Messages />
+        <h1>{message}</h1>
+        <form onSubmit={submit}>
+          <input
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+          />
+          <button>送信</button>
+        </form>
       </div>
-    </>
-  );
-};
-
-const Messages = () => {
-  const { messages } = useSockets();
-  return (
-    <>
-      {messages && (
-        <div>
-          {messages.map(({ message }, index) => {
-            return <li key={index}>{message}</li>;
-          })}
-        </div>
-      )}
     </>
   );
 };
