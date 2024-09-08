@@ -3,13 +3,19 @@ import { Types } from "@discord/embedded-app-sdk";
 import discordSdk, { setupDiscordSdk } from "./Discord";
 import ReconnectingWebSocket from "reconnecting-websocket";
 
+type SocketData = {
+  msg: string;
+};
+
 const App = () => {
   const [voiceChannelName, setVoiceChannelName] = useState("");
   const [playerList, setPlayerList] = useState<
     Types.GetActivityInstanceConnectedParticipantsResponse["participants"]
   >([]);
 
-  const [message, setMessage] = useState("");
+  const [socketPush, setSocketPush] = useState<SocketData>({ msg: "" });
+  const [socketPull, setSocketPull] = useState<SocketData>({ msg: "" });
+
   const webSocketRef = useRef<ReconnectingWebSocket>();
 
   useEffect(() => {
@@ -23,9 +29,8 @@ const App = () => {
 
     socket.addEventListener("message", (event) => {
       console.log("こう、、、しん？？");
-      event.data.text().then((text: string) => {
-        setMessage(text);
-      });
+      const socketData = JSON.parse(event.data);
+      setSocketPull(socketData);
     });
 
     return () => socket.close();
@@ -35,7 +40,8 @@ const App = () => {
   const submit: React.FormEventHandler = useCallback(
     (event: React.FormEvent) => {
       event.preventDefault();
-      webSocketRef.current?.send(inputText);
+      const newSocketData = { ...socketPull, msg: inputText };
+      setSocketPush(newSocketData);
     },
     [inputText]
   );
@@ -46,6 +52,10 @@ const App = () => {
       appendPlayer();
     });
   }, []);
+
+  useEffect(() => {
+    webSocketRef.current?.send(JSON.stringify(socketPush));
+  }, [socketPush]);
 
   const appendVoiceChannelName = async () => {
     let activityChannelName = "Unknown";
@@ -83,7 +93,7 @@ const App = () => {
         ))}
       </ul>
       <div>
-        <h1>{message}</h1>
+        <h1>{socketPull.msg}</h1>
         <form onSubmit={submit}>
           <input
             value={inputText}
