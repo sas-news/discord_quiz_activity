@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import ReconnectingWebSocket from "reconnecting-websocket";
 
 type SocketData = {
-  msg: string;
+  btn?: string;
 };
 
 const useWebSocket = (

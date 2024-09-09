@@ -3,11 +3,76 @@ import { Types } from "@discord/embedded-app-sdk";
 import discordSdk, { setupDiscordSdk } from "./Discord";
 import useWebSocket from "./Socket";
 
+type Auth = {
+  access_token: string;
+  user: {
+    username: string;
+    discriminator: string;
+    id: string;
+    public_flags: number;
+    avatar?: string | null | undefined;
+    global_name?: string | null | undefined;
+  };
+  scopes: (
+    | -1
+    | "identify"
+    | "email"
+    | "connections"
+    | "guilds"
+    | "guilds.join"
+    | "guilds.members.read"
+    | "gdm.join"
+    | "bot"
+    | "rpc"
+    | "rpc.notifications.read"
+    | "rpc.voice.read"
+    | "rpc.voice.write"
+    | "rpc.video.read"
+    | "rpc.video.write"
+    | "rpc.screenshare.read"
+    | "rpc.screenshare.write"
+    | "rpc.activities.write"
+    | "webhook.incoming"
+    | "messages.read"
+    | "applications.builds.upload"
+    | "applications.builds.read"
+    | "applications.commands"
+    | "applications.commands.permissions.update"
+    | "applications.commands.update"
+    | "applications.store.update"
+    | "applications.entitlements"
+    | "activities.read"
+    | "activities.write"
+    | "relationships.read"
+    | "relationships.write"
+    | "voice"
+    | "dm_channels.read"
+    | "role_connections.write"
+    | "presences.read"
+    | "presences.write"
+    | "openid"
+    | "dm_channels.messages.read"
+    | "dm_channels.messages.write"
+    | "gateway.connect"
+    | "account.global_name.update"
+    | "payment_sources.country_code"
+  )[];
+  expires: string;
+  application: {
+    id: string;
+    description: string;
+    name: string;
+    icon?: string | null | undefined;
+    rpc_origins?: string[] | undefined;
+  };
+};
+
 const App = () => {
   const [voiceChannelName, setVoiceChannelName] = useState("");
   const [playerList, setPlayerList] = useState<
     Types.GetActivityInstanceConnectedParticipantsResponse["participants"]
   >([]);
+  const [auth, setAuth] = useState<Auth>();
 
   const [socketData, setSocket] = useWebSocket(
     `wss://${
@@ -15,17 +80,16 @@ const App = () => {
     }.discordsays.com/.proxy/api/ws?channel=${discordSdk.channelId}`
   );
 
-  const [inputText, setInputText] = useState("");
-  const submit: React.FormEventHandler = useCallback(
-    (event: React.FormEvent) => {
-      event.preventDefault();
-      setSocket({ msg: inputText });
-    },
-    [inputText]
-  );
   useEffect(() => {
-    setupDiscordSdk().then((auth) => {
-      console.log("Discord SDK is authenticated", auth);
+    if (socketData != null) {
+      console.log("Received from WebSocket", socketData);
+    }
+  }, [socketData?.btn]);
+
+  useEffect(() => {
+    setupDiscordSdk().then((authToken) => {
+      console.log("Discord SDK is authenticated", authToken);
+      setAuth(authToken);
       appendVoiceChannelName();
       appendPlayer();
     });
@@ -52,6 +116,23 @@ const App = () => {
     setPlayerList(participants);
   };
 
+  const renderPlayer = (player: string) => {
+    switch (socketData?.btn) {
+      case "wait":
+        return "wait";
+      case "ready":
+        return "ready";
+      case player:
+        return "on";
+      default:
+        return "off";
+    }
+  };
+
+  const handleClick = useCallback(() => {
+    setSocket({ btn: auth?.user.username });
+  }, [setSocket]);
+
   return (
     <>
       <h1>Vite + React</h1>
@@ -61,21 +142,18 @@ const App = () => {
         </p>
       </div>
       <p className="read-the-docs">{voiceChannelName}</p>
+      <h2>{socketData?.btn}</h2>
       <ul>
         {playerList.map((player) => (
-          <li key={player.id}>{player.username}</li>
+          <button
+            key={player.id}
+            onClick={handleClick}
+            className={renderPlayer(player.username)}
+          >
+            {player.username}
+          </button>
         ))}
       </ul>
-      <div>
-        <h1>{socketData?.msg}</h1>
-        <form onSubmit={submit}>
-          <input
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-          />
-          <button>送信</button>
-        </form>
-      </div>
     </>
   );
 };
