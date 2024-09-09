@@ -50,19 +50,41 @@ const server = http.createServer(app);
 
 const wss = new WebSocketServer({ server, path: "/api/ws" });
 
-wss.on("connection", (ws) => {
-  console.log("connected!");
+const channels: { [key: string]: Set<WebSocket> } = {};
+
+wss.on("connection", (ws, req) => {
+  const urlParams = new URLSearchParams(req.url?.split("?")[1]);
+  const channel = urlParams.get("channel");
+
+  if (!channel) {
+    ws.close();
+    return;
+  }
+
+  if (!channels[channel]) {
+    channels[channel] = new Set();
+  }
+
+  channels[channel].add(ws);
+  console.log(`Client connected to channel: ${channel}`);
 
   ws.on("message", (data, isBinary) => {
-    for (const client of wss.clients) {
+    for (const client of channels[channel]) {
       if (client.readyState === WebSocket.OPEN) {
         client.send(data, { binary: isBinary });
       }
     }
   });
 
-  ws.on("close", () => console.log("closed!"));
+  ws.on("close", () => {
+    channels[channel].delete(ws);
+    if (channels[channel].size === 0) {
+      delete channels[channel];
+    }
+    console.log(`Client disconnected from channel: ${channel}`);
+  });
 });
+
 server.listen(port, host, () => {
   console.log(`http://114.148.254.131:${port}`);
 });

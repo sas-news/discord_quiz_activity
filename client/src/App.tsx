@@ -1,11 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Types } from "@discord/embedded-app-sdk";
 import discordSdk, { setupDiscordSdk } from "./Discord";
-import ReconnectingWebSocket from "reconnecting-websocket";
-
-type SocketData = {
-  msg: string;
-};
+import useWebSocket from "./Socket";
 
 const App = () => {
   const [voiceChannelName, setVoiceChannelName] = useState("");
@@ -13,35 +9,17 @@ const App = () => {
     Types.GetActivityInstanceConnectedParticipantsResponse["participants"]
   >([]);
 
-  const [socketPush, setSocketPush] = useState<SocketData>({ msg: "" });
-  const [socketPull, setSocketPull] = useState<SocketData>({ msg: "" });
-
-  const webSocketRef = useRef<ReconnectingWebSocket>();
-
-  useEffect(() => {
-    const socket = new ReconnectingWebSocket(
-      `wss://${
-        import.meta.env.VITE_DISCORD_CLIENT_ID
-      }.discordsays.com/.proxy/api/ws`
-    );
-    webSocketRef.current = socket;
-    console.log("そけおおおおんんん");
-
-    socket.addEventListener("message", (event) => {
-      console.log("こう、、、しん？？");
-      const socketData = JSON.parse(event.data);
-      setSocketPull(socketData);
-    });
-
-    return () => socket.close();
-  }, []);
+  const [socketData, setSocket] = useWebSocket(
+    `wss://${
+      import.meta.env.VITE_DISCORD_CLIENT_ID
+    }.discordsays.com/.proxy/api/ws?channel=${discordSdk.channelId}`
+  );
 
   const [inputText, setInputText] = useState("");
   const submit: React.FormEventHandler = useCallback(
     (event: React.FormEvent) => {
       event.preventDefault();
-      const newSocketData = { ...socketPull, msg: inputText };
-      setSocketPush(newSocketData);
+      setSocket({ msg: inputText });
     },
     [inputText]
   );
@@ -52,10 +30,6 @@ const App = () => {
       appendPlayer();
     });
   }, []);
-
-  useEffect(() => {
-    webSocketRef.current?.send(JSON.stringify(socketPush));
-  }, [socketPush]);
 
   const appendVoiceChannelName = async () => {
     let activityChannelName = "Unknown";
@@ -93,7 +67,7 @@ const App = () => {
         ))}
       </ul>
       <div>
-        <h1>{socketPull.msg}</h1>
+        <h1>{socketData?.msg}</h1>
         <form onSubmit={submit}>
           <input
             value={inputText}
