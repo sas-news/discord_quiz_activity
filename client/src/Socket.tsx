@@ -22,11 +22,11 @@ const useWebSocket = (
     webSocketRef.current = socket;
     console.log("そけおおおおんんん");
 
-    socket.addEventListener("message", (event) => {
+    socket.onmessage = (event) => {
       console.log("こう、、、しん？？");
       const socketData = JSON.parse(event.data);
       setSocketPull(socketData);
-    });
+    };
 
     return () => socket.close();
   }, []);

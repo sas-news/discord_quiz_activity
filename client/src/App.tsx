@@ -119,13 +119,13 @@ const App = () => {
   const renderPlayer = (player: string) => {
     switch (socketData?.btn) {
       case "wait":
-        return "wait";
+        return "wait disabled";
       case "ready":
         return "ready";
       case player:
-        return "on";
+        return "on disabled";
       default:
-        return "off";
+        return "off disabled";
     }
   };
 
@@ -154,6 +154,15 @@ const App = () => {
           </button>
         ))}
       </ul>
+      <div>
+        <h2>管理者ボタン</h2>
+        <button onClick={() => setSocket({ btn: "wait" })} className="admin">
+          待機
+        </button>
+        <button onClick={() => setSocket({ btn: "ready" })} className="admin">
+          スタート
+        </button>
+      </div>
     </>
   );
 };
