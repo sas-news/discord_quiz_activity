@@ -33,9 +33,6 @@ importers:
       socket.io-client:
         specifier: ^4.7.5
         version: 4.7.5
-      typescript:
-        specifier: ^5.5.4
-        version: 5.5.4
       vite:
         specifier: ^5.0.8
         version: 5.4.2(@types/node@22.5.1)
@@ -592,11 +589,6 @@ packages:
   to-fast-properties@2.0.0:
     resolution: {integrity: sha512-/OaKK0xYrs3DmxRYqL/yDc+FxFUVYhDlXMhRmv3z915w2HF1tnN1omB354j8VUGO/hbRzyD6Y3sA7v7GS/ceog==}
     engines: {node: '>=4'}
-
-  typescript@5.5.4:
-    resolution: {integrity: sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==}
-    engines: {node: '>=14.17'}
-    hasBin: true
 
   undici-types@6.19.8:
     resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
@@ -1191,8 +1183,6 @@ snapshots:
       has-flag: 3.0.0
 
   to-fast-properties@2.0.0: {}
-
-  typescript@5.5.4: {}
 
   undici-types@6.19.8:
     optional: true

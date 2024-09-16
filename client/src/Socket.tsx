@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import ReconnectingWebSocket from "reconnecting-websocket";
+import discordSdk from "./Discord";
 
 type SocketData = {
   btn?: string;
+  quizmaster?: string | null;
 };
 
-const useWebSocket = (
-  url: string
-): [SocketData | null, (data: SocketData) => void] => {
+const url = `wss://${
+  import.meta.env.VITE_DISCORD_CLIENT_ID
+}.discordsays.com/.proxy/api/ws?channel=${discordSdk.channelId}`;
+
+const useWebSocket = (): [SocketData | null, (data: SocketData) => void] => {
   const [socketPush, setSocketPush] = useState<SocketData | null>(null);
   const [socketPull, setSocketPull] = useState<SocketData | null>(null);
 
-  const setSocket = (data: SocketData) => {
+  const addSocket = (data: SocketData) => {
     setSocketPush({ ...socketPull, ...data });
   };
 
@@ -35,7 +39,7 @@ const useWebSocket = (
     webSocketRef.current?.send(JSON.stringify(socketPush));
   }, [socketPush]);
 
-  return [socketPull, setSocket];
+  return [socketPull, addSocket];
 };
 
 export default useWebSocket;

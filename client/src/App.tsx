@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Types } from "@discord/embedded-app-sdk";
 import discordSdk, { setupDiscordSdk } from "./Discord";
+import LoadingPage from "./Loading";
 import useWebSocket from "./Socket";
+import Quizmaster from "./Quizmaster";
 
 type Auth = {
   access_token: string;
@@ -73,18 +75,9 @@ const App = () => {
     Types.GetActivityInstanceConnectedParticipantsResponse["participants"]
   >([]);
   const [auth, setAuth] = useState<Auth>();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [socketData, setSocket] = useWebSocket(
-    `wss://${
-      import.meta.env.VITE_DISCORD_CLIENT_ID
-    }.discordsays.com/.proxy/api/ws?channel=${discordSdk.channelId}`
-  );
-
-  useEffect(() => {
-    if (socketData != null) {
-      console.log("Received from WebSocket", socketData);
-    }
-  }, [socketData?.btn]);
+  const [socket, addSocket] = useWebSocket();
 
   useEffect(() => {
     setupDiscordSdk().then((authToken) => {
@@ -92,6 +85,7 @@ const App = () => {
       setAuth(authToken);
       appendVoiceChannelName();
       appendPlayer();
+      setIsLoading(false);
     });
   }, []);
 
@@ -117,9 +111,7 @@ const App = () => {
   };
 
   const renderPlayer = (player: string) => {
-    switch (socketData?.btn) {
-      case "wait":
-        return "wait disabled";
+    switch (socket?.btn) {
       case "ready":
         return "ready";
       case player:
@@ -130,8 +122,16 @@ const App = () => {
   };
 
   const handleClick = useCallback(() => {
-    setSocket({ btn: auth?.user.username });
-  }, [setSocket]);
+    addSocket({ btn: auth?.user.username });
+  }, [addSocket]);
+
+  if (isLoading) {
+    return <LoadingPage />;
+  }
+
+  if (socket?.quizmaster == auth?.user.username) {
+    return <Quizmaster />;
+  }
 
   return (
     <>
@@ -142,7 +142,7 @@ const App = () => {
         </p>
       </div>
       <p className="read-the-docs">{voiceChannelName}</p>
-      <h2>{socketData?.btn}</h2>
+      <h2>{socket?.btn}</h2>
       <ul>
         {playerList.map((player) => (
           <button
@@ -154,15 +154,15 @@ const App = () => {
           </button>
         ))}
       </ul>
-      <div>
-        <h2>管理者ボタン</h2>
-        <button onClick={() => setSocket({ btn: "wait" })} className="admin">
-          待機
+      {socket?.quizmaster ? null : (
+        <button
+          onClick={() => {
+            addSocket({ quizmaster: auth?.user.username });
+          }}
+        >
+          出題者になる
         </button>
-        <button onClick={() => setSocket({ btn: "ready" })} className="admin">
-          スタート
-        </button>
-      </div>
+      )}
     </>
   );
 };

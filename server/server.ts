@@ -69,6 +69,13 @@ wss.on("connection", (ws, req) => {
   console.log(`Client connected to channel: ${channel}`);
 
   ws.on("message", (data, isBinary) => {
+    try {
+      const message = JSON.parse(data.toString());
+      console.log("Received JSON message:", message);
+    } catch (e) {
+      console.log("Received non-JSON message");
+    }
+
     for (const client of channels[channel]) {
       if (client.readyState === WebSocket.OPEN) {
         client.send(data, { binary: isBinary });
