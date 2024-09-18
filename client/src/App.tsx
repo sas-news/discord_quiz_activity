@@ -89,6 +89,10 @@ const App = () => {
     });
   }, []);
 
+  useEffect(() => {
+    appendPlayer();
+  }, [discordSdk.commands.getInstanceConnectedParticipants()]);
+
   const appendVoiceChannelName = async () => {
     let activityChannelName = "Unknown";
 
@@ -135,12 +139,7 @@ const App = () => {
 
   return (
     <>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
+      <h1>早押しクイズ</h1>
       <p className="read-the-docs">{voiceChannelName}</p>
       <h2>{socket?.btn}</h2>
       <ul>
@@ -155,13 +154,19 @@ const App = () => {
         ))}
       </ul>
       {socket?.quizmaster ? null : (
-        <button
-          onClick={() => {
-            addSocket({ quizmaster: auth?.user.username });
-          }}
-        >
-          出題者になる
-        </button>
+        <>
+          <label>
+            <input type="checkbox" />
+            AIモード
+          </label>
+          <button
+            onClick={() => {
+              addSocket({ quizmaster: auth?.user.username });
+            }}
+          >
+            出題者になる
+          </button>
+        </>
       )}
     </>
   );
