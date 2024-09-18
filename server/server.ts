@@ -50,7 +50,7 @@ const server = http.createServer(app);
 
 const wss = new WebSocketServer({ server, path: "/api/ws" });
 
-const channels: { [key: string]: Set<WebSocket> } = {};
+const channels: { [key: string]: Set<WebSocket> & { data?: any } } = {};
 
 wss.on("connection", (ws, req) => {
   const urlParams = new URLSearchParams(req.url?.split("?")[1]);
@@ -71,15 +71,20 @@ wss.on("connection", (ws, req) => {
   ws.on("message", (data, isBinary) => {
     try {
       const message = JSON.parse(data.toString());
-      console.log("Received JSON message:", message);
+      if (!channels[channel].data) {
+        channels[channel].data = {};
+      }
+      channels[channel].data = { ...channels[channel].data, ...message };
+
+      for (const client of channels[channel]) {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(channels[channel].data), {
+            binary: isBinary,
+          });
+        }
+      }
     } catch (e) {
       console.log("Received non-JSON message");
-    }
-
-    for (const client of channels[channel]) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(data, { binary: isBinary });
-      }
     }
   });
 

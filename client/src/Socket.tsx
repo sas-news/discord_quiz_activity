@@ -15,10 +15,6 @@ const useWebSocket = (): [SocketData | null, (data: SocketData) => void] => {
   const [socketPush, setSocketPush] = useState<SocketData | null>(null);
   const [socketPull, setSocketPull] = useState<SocketData | null>(null);
 
-  const addSocket = (data: SocketData) => {
-    setSocketPush({ ...socketPull, ...data });
-  };
-
   const webSocketRef = useRef<ReconnectingWebSocket>();
 
   useEffect(() => {
@@ -27,7 +23,6 @@ const useWebSocket = (): [SocketData | null, (data: SocketData) => void] => {
     console.log("そけおおおおんんん");
 
     socket.onmessage = (event) => {
-      console.log("こう、、、しん？？");
       const socketData = JSON.parse(event.data);
       setSocketPull(socketData);
     };
@@ -35,8 +30,14 @@ const useWebSocket = (): [SocketData | null, (data: SocketData) => void] => {
     return () => socket.close();
   }, []);
 
+  const addSocket = (data: SocketData) => {
+    setSocketPush(data);
+  };
+
   useEffect(() => {
-    webSocketRef.current?.send(JSON.stringify(socketPush));
+    if (socketPush) {
+      webSocketRef.current?.send(JSON.stringify(socketPush));
+    }
   }, [socketPush]);
 
   return [socketPull, addSocket];
