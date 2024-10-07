@@ -103,3 +103,130 @@ button:focus-visible {
 .disabled {
   pointer-events: none;
 }
+
+.wrap {
+  --black: #000000;
+  --ch-black: #141414;
+  --eer-black: #1b1b1b;
+  --night-rider: #2e2e2e;
+  --white: #ffffff;
+  --af-white: #f3f3f3;
+  --ch-white: #e1e1e1;
+  font-family: Helvetica, sans-serif;
+}
+
+.back {
+  position: absolute;
+  width: 16.6em;
+  height: 6.5em;
+  margin-top: -0.8em;
+  margin-left: -0.77em;
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 2px,
+    rgba(0, 0, 0, 0.3) 0px 7px 13px -3px, rgba(0, 0, 0, 0.2) 0px -1px 0px inset;
+  background-color: #171717;
+  z-index: 1; /* 追加 */
+}
+
+.main {
+  display: flex;
+  justify-content: center; /* 追加 */
+}
+
+.switch {
+  display: block;
+  position: relative;
+  background-color: black;
+  box-sizing: border-box;
+  width: 70px;
+  height: 70px;
+  box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.2), 0 0 1px 2px var(--black),
+    inset 0 2px 2px -2px var(--white), inset 0 0 2px 5px var(--night-rider),
+    inset 0 0 2px 22px var(--black);
+  border-radius: 50%;
+  padding: 20px;
+  margin-inline: auto;
+  z-index: 2;
+
+  &.on .button {
+    .light {
+      animation: flicker 0.2s infinite 0.3s;
+    }
+    .shine {
+      opacity: 1;
+    }
+    .shadow {
+      opacity: 0;
+    }
+  }
+
+  .button {
+    transition: all 0.3s cubic-bezier(1, 0, 1, 1);
+    background-color: var(--night-rider);
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    position: relative;
+    left: -0.75em;
+    top: -0.79em;
+    cursor: pointer;
+
+    .light {
+      opacity: 0;
+      animation: light-off 1s;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(
+        var(--ch-white),
+        rgb(255, 0, 71) 70%,
+        transparent 72%
+      );
+    }
+
+    .dots {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(transparent 30%, var(--black) 70%);
+      background-size: 8px 8px;
+      border-radius: 50%;
+    }
+  }
+
+  p {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: fit-content;
+    margin-inline: 0;
+    margin-block: 0;
+    white-space: nowrap;
+    text-align: center;
+  }
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes light-off {
+  0% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 0;
+  }
+}

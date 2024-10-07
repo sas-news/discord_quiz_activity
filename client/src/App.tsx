@@ -84,14 +84,9 @@ const App = () => {
       console.log("Discord SDK is authenticated", authToken);
       setAuth(authToken);
       appendVoiceChannelName();
-      appendPlayer();
       setIsLoading(false);
     });
   }, []);
-
-  useEffect(() => {
-    appendPlayer();
-  }, [discordSdk.commands.getInstanceConnectedParticipants()]);
 
   const appendVoiceChannelName = async () => {
     let activityChannelName = "Unknown";
@@ -108,9 +103,9 @@ const App = () => {
     setVoiceChannelName(activityChannelName);
   };
 
-  const appendPlayer = async () => {
-    const { participants } =
-      await discordSdk.commands.getInstanceConnectedParticipants();
+  const appendPlayer = async (
+    participants: Types.GetActivityInstanceConnectedParticipantsResponse["participants"]
+  ) => {
     setPlayerList(participants);
   };
 
@@ -129,6 +124,35 @@ const App = () => {
     addSocket({ btn: auth?.user.username });
   }, [addSocket]);
 
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const { participants } =
+        await discordSdk.commands.getInstanceConnectedParticipants();
+
+      const extractUsernames = (
+        list: Types.GetActivityInstanceConnectedParticipantsResponse["participants"]
+      ) => list.map((player) => player.username);
+
+      const participantUsernames = extractUsernames(participants);
+      const playerListUsernames = extractUsernames(playerList);
+
+      if (
+        JSON.stringify(participantUsernames) !==
+        JSON.stringify(playerListUsernames)
+      ) {
+        console.log("プレイヤー更新");
+        appendPlayer(participants);
+        if (
+          !participants.some((player) => player.username === socket?.quizmaster)
+        ) {
+          addSocket({ quizmaster: null });
+        }
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [playerList]);
+
   if (isLoading) {
     return <LoadingPage />;
   }
@@ -142,17 +166,24 @@ const App = () => {
       <h1>早押しクイズ</h1>
       <p className="read-the-docs">{voiceChannelName}</p>
       <h2>{socket?.btn}</h2>
-      <ul>
-        {playerList.map((player) => (
-          <button
-            key={player.id}
-            onClick={handleClick}
-            className={renderPlayer(player.username)}
-          >
-            {player.username}
-          </button>
-        ))}
-      </ul>
+      <div className="wrap">
+        <div className="back" />
+        <div className="main" onClick={handleClick}>
+          {playerList.map((player) => (
+            <div
+              className={`switch ${renderPlayer(player.username)}`}
+              key={player.username}
+            >
+              <div className="button">
+                <div className="light" />
+                <div className="dots" />
+              </div>
+              <p>{player.nickname ? player.nickname : player.global_name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <br />
       {socket?.quizmaster ? null : (
         <>
           <label>
