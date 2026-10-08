@@ -121,8 +121,10 @@ const App = () => {
   };
 
   const handleClick = useCallback(() => {
+    // "ready" 状態のときだけ押せる（既に誰かが押した後の上書きを防ぐ）
+    if (socket?.btn !== "ready") return;
     addSocket({ btn: auth?.user.username });
-  }, [addSocket]);
+  }, [addSocket, socket?.btn, auth?.user.username]);
 
   useEffect(() => {
     const interval = setInterval(async () => {

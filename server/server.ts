@@ -1,4 +1,4 @@
-import express, { Express } from "express";
+import express from "express";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 import http from "http";
@@ -8,7 +8,7 @@ import { env } from "process";
 
 dotenv.config({ path: "../.env" });
 
-const app: Express = express();
+const app = express();
 const port = 3690;
 const host = "127.0.0.1";
 const corsOrigin = `https://${env.VITE_DISCORD_CLIENT_ID}.discordsays.com`;
@@ -50,7 +50,9 @@ const server = http.createServer(app);
 
 const wss = new WebSocketServer({ server, path: "/api/ws" });
 
-const channels: { [key: string]: Set<WebSocket> & { data?: any } } = {};
+// プロトタイプ汚染を防ぐためプロトタイプなしのオブジェクトを使う
+const channels: { [key: string]: Set<WebSocket> & { data?: any } } =
+  Object.create(null);
 
 wss.on("connection", (ws, req) => {
   const urlParams = new URLSearchParams(req.url?.split("?")[1]);
@@ -67,6 +69,11 @@ wss.on("connection", (ws, req) => {
 
   channels[channel].add(ws);
   console.log(`Client connected to channel: ${channel}`);
+
+  // 途中参加したクライアントにも現在の状態を送る
+  if (channels[channel].data) {
+    ws.send(JSON.stringify(channels[channel].data));
+  }
 
   ws.on("message", (data, isBinary) => {
     try {
@@ -98,5 +105,5 @@ wss.on("connection", (ws, req) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`http://114.148.254.131:${port}`);
+  console.log(`http://${host}:${port}`);
 });
